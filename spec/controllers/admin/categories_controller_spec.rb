@@ -32,6 +32,7 @@ describe Admin::CategoriesController do
       assert assigns(:category).valid?
       assigns(:categories).should_not be_nil
     end
+
   end
 
   it "test_update" do
@@ -63,4 +64,14 @@ describe Admin::CategoriesController do
     assert_raise(ActiveRecord::RecordNotFound) { Category.find(test_id) }
   end
   
+  it 'should create new model for @category if params[:id] is nil' do
+      get :new
+      assigns(:category).should_not be_nil
+  end
+
+  it 'should not have empty name model object' do
+    test_name = Factory(:category).name
+    test_name.should_not be_empty
+  end
+
 end
