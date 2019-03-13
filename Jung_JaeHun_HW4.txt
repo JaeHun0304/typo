@@ -1,0 +1,480 @@
+JaeHun Jung
+427006046
+
+heroku URL: https://mysterious-earth-42875.herokuapp.com/admin
+github repo URL: https://github.com/JaeHun0304/typo.git
+
+
+
+features/create_edit_category.feature file
+
+
+Feature: Create or Edit category
+	As a blog administrator
+	In order to categorize my blogs
+	I want to create category for my articles
+
+	Background:
+		Given the blog is set up
+		And I am logged into the admin panel
+
+		Given the following categories exist:
+		| name        | keywords | permalink     | description |
+		| Personal        |  |     | |
+
+
+	Scenario: Create category for articles
+		Given I am on the categories page
+		When I fill in "Name" with "Custom"
+		And I press "Save"
+		Then I should be on the categories page
+		And I should see "Custom"
+
+	Scenario: Edit existing category
+		Given I am on the categories page
+		And I follow "Personal"
+		And I fill in "Name" with "Work"
+		And I press "Save"
+		Then I should be on the categories page
+		And I should see "Work"
+		And I should not see "Personal"
+
+
+spec/controllers/admin/categories_controller_spec.rb file
+
+
+require 'spec_helper'
+
+describe Admin::CategoriesController do
+  render_views
+
+  before(:each) do
+    Factory(:blog)
+    #TODO Delete after removing fixtures
+    Profile.delete_all
+    henri = Factory(:user, :login => 'henri', :profile => Factory(:profile_admin, :label => Profile::ADMIN))
+    request.session = { :user => henri.id }
+  end
+
+  it "test_index" do
+    get :index
+    assert_response :redirect, :action => 'index'
+  end
+
+  describe "test_edit" do
+    before(:each) do
+      get :edit, :id => Factory(:category).id
+    end
+
+    it 'should render template new' do
+      assert_template 'new'
+      assert_tag :tag => "table",
+        :attributes => { :id => "category_container" }
+    end
+
+    it 'should have valid category' do
+      assigns(:category).should_not be_nil
+      assert assigns(:category).valid?
+      assigns(:categories).should_not be_nil
+    end
+
+  end
+
+  it "test_update" do
+    post :edit, :id => Factory(:category).id
+    assert_response :redirect, :action => 'index'
+  end
+
+  describe "test_destroy with GET" do
+    before(:each) do
+      test_id = Factory(:category).id
+      assert_not_nil Category.find(test_id)
+      get :destroy, :id => test_id
+    end
+
+    it 'should render destroy template' do
+      assert_response :success
+      assert_template 'destroy'      
+    end
+  end
+
+  it "test_destroy with POST" do
+    test_id = Factory(:category).id
+    assert_not_nil Category.find(test_id)
+    get :destroy, :id => test_id
+
+    post :destroy, :id => test_id
+    assert_response :redirect, :action => 'index'
+
+    assert_raise(ActiveRecord::RecordNotFound) { Category.find(test_id) }
+  end
+  
+  it 'should create new model for @category if params[:id] is nil' do
+      get :new
+      assigns(:category).should_not be_nil
+  end
+
+  it 'should not have empty name model object for editing' do
+    test_name = Factory(:category).name
+    test_name.should_not be_empty
+  end
+
+end
+
+
+
+Cucumber logs
+
+ec2-user:~/environment/typo (master) $ bundle exec rake cucumber
+NOTICE:  CREATE TABLE will create implicit sequence "blogs_id_seq" for serial column "blogs.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "blogs_pkey" for table "blogs"
+NOTICE:  CREATE TABLE will create implicit sequence "categories_id_seq" for serial column "categories.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "categories_pkey" for table "categories"
+NOTICE:  CREATE TABLE will create implicit sequence "categorizations_id_seq" for serial column "categorizations.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "categorizations_pkey" for table "categorizations"
+NOTICE:  CREATE TABLE will create implicit sequence "contents_id_seq" for serial column "contents.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "contents_pkey" for table "contents"
+NOTICE:  CREATE TABLE will create implicit sequence "feedback_id_seq" for serial column "feedback.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "feedback_pkey" for table "feedback"
+NOTICE:  CREATE TABLE will create implicit sequence "notifications_id_seq" for serial column "notifications.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "notifications_pkey" for table "notifications"
+NOTICE:  CREATE TABLE will create implicit sequence "page_caches_id_seq" for serial column "page_caches.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "page_caches_pkey" for table "page_caches"
+NOTICE:  CREATE TABLE will create implicit sequence "pings_id_seq" for serial column "pings.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pings_pkey" for table "pings"
+NOTICE:  CREATE TABLE will create implicit sequence "post_types_id_seq" for serial column "post_types.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "post_types_pkey" for table "post_types"
+NOTICE:  CREATE TABLE will create implicit sequence "profiles_id_seq" for serial column "profiles.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "profiles_pkey" for table "profiles"
+NOTICE:  CREATE TABLE will create implicit sequence "redirections_id_seq" for serial column "redirections.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "redirections_pkey" for table "redirections"
+NOTICE:  CREATE TABLE will create implicit sequence "redirects_id_seq" for serial column "redirects.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "redirects_pkey" for table "redirects"
+NOTICE:  CREATE TABLE will create implicit sequence "resources_id_seq" for serial column "resources.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "resources_pkey" for table "resources"
+NOTICE:  CREATE TABLE will create implicit sequence "rights_id_seq" for serial column "rights.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "rights_pkey" for table "rights"
+NOTICE:  CREATE TABLE will create implicit sequence "sidebars_id_seq" for serial column "sidebars.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "sidebars_pkey" for table "sidebars"
+NOTICE:  CREATE TABLE will create implicit sequence "sitealizer_id_seq" for serial column "sitealizer.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "sitealizer_pkey" for table "sitealizer"
+NOTICE:  CREATE TABLE will create implicit sequence "tags_id_seq" for serial column "tags.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tags_pkey" for table "tags"
+NOTICE:  CREATE TABLE will create implicit sequence "text_filters_id_seq" for serial column "text_filters.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "text_filters_pkey" for table "text_filters"
+NOTICE:  CREATE TABLE will create implicit sequence "triggers_id_seq" for serial column "triggers.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "triggers_pkey" for table "triggers"
+NOTICE:  CREATE TABLE will create implicit sequence "users_id_seq" for serial column "users.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "users_pkey" for table "users"
+/home/ec2-user/.rvm/rubies/ruby-1.9.3-p551/bin/ruby -S bundle exec cucumber  --profile default
+Using the default profile...
+/home/ec2-user/.rvm/gems/ruby-1.9.3-p551/gems/activesupport-3.0.17/lib/active_support/dependencies.rb:242:in `block in require': iconv will be deprecated in the future, use String#encode instead.
+Feature: Create Blog
+  As an author
+  In order to gift my thoughts to the world
+  I want to create a blog
+
+  Scenario: Create blog page shown      # features/create_blog.feature:6
+    Given I am on the home page         # features/step_definitions/web_steps.rb:68
+    Then I should see "Welcome"         # features/step_definitions/web_steps.rb:129
+    And I should see "My Shiny Weblog!" # features/step_definitions/web_steps.rb:129
+
+  Scenario: Create blog page not shown when blog created # features/create_blog.feature:11
+    Given the blog is set up                             # features/step_definitions/web_steps.rb:34
+    When I am on the home page                           # features/step_definitions/web_steps.rb:68
+    Then I should not see "My Shiny Weblog!"             # features/step_definitions/web_steps.rb:147
+    And I should see "Teh Blag"                          # features/step_definitions/web_steps.rb:129
+
+Feature: Create or Edit category
+  As a blog administrator
+  In order to categorize my blogs
+  I want to create category for my articles
+
+  Background:                             # features/create_edit_category.feature:6
+    Given the blog is set up              # features/step_definitions/web_steps.rb:34
+    And I am logged into the admin panel  # features/step_definitions/web_steps.rb:46
+    Given the following categories exist: # features/step_definitions/categories_steps.rb:1
+      | name     | keywords | permalink | description |
+      | Personal |          |           |             |
+
+  Scenario: Create category for articles    # features/create_edit_category.feature:15
+    Given I am on the categories page       # features/step_definitions/web_steps.rb:68
+    When I fill in "Name" with "Custom"     # features/step_definitions/web_steps.rb:84
+    And I press "Save"                      # features/step_definitions/web_steps.rb:76
+    Then I should be on the categories page # features/step_definitions/web_steps.rb:254
+    And I should see "Custom"               # features/step_definitions/web_steps.rb:129
+
+  Scenario: Edit existing category          # features/create_edit_category.feature:22
+    Given I am on the categories page       # features/step_definitions/web_steps.rb:68
+    And I follow "Personal"                 # features/step_definitions/web_steps.rb:80
+    And I fill in "Name" with "Work"        # features/step_definitions/web_steps.rb:84
+    And I press "Save"                      # features/step_definitions/web_steps.rb:76
+    Then I should be on the categories page # features/step_definitions/web_steps.rb:254
+    And I should see "Work"                 # features/step_definitions/web_steps.rb:129
+    And I should not see "Personal"         # features/step_definitions/web_steps.rb:147
+
+Feature: Write Articles
+  As a blog administrator
+  In order to share my thoughts with the world
+  I want to be able to add articles to my blog
+
+  Background:                            # features/write_article.feature:6
+    Given the blog is set up             # features/step_definitions/web_steps.rb:34
+    And I am logged into the admin panel # features/step_definitions/web_steps.rb:46
+
+  Scenario: Successfully write articles                                  # features/write_article.feature:10
+    Given I am on the new article page                                   # features/step_definitions/web_steps.rb:68
+    When I fill in "article_title" with "Foobar"                         # features/step_definitions/web_steps.rb:84
+    And I fill in "article__body_and_extended_editor" with "Lorem Ipsum" # features/step_definitions/web_steps.rb:84
+    And I press "Publish"                                                # features/step_definitions/web_steps.rb:76
+    Then I should be on the admin content page                           # features/step_definitions/web_steps.rb:254
+    When I go to the home page                                           # features/step_definitions/web_steps.rb:72
+    Then I should see "Foobar"                                           # features/step_definitions/web_steps.rb:129
+    When I follow "Foobar"                                               # features/step_definitions/web_steps.rb:80
+    Then I should see "Lorem Ipsum"                                      # features/step_definitions/web_steps.rb:129
+
+5 scenarios (5 passed)
+36 steps (36 passed)
+0m2.953s
+
+
+
+Rspec logs for spec/controllers/admin/categories_controller_spec.rb from line 67 to 70
+
+ec2-user:~/environment/typo (master) $ rake spec SPEC=spec/controllers/admin/categories_controller_spec.rb:67:68:69:70
+NOTICE:  CREATE TABLE will create implicit sequence "blogs_id_seq" for serial column "blogs.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "blogs_pkey" for table "blogs"
+NOTICE:  CREATE TABLE will create implicit sequence "categories_id_seq" for serial column "categories.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "categories_pkey" for table "categories"
+NOTICE:  CREATE TABLE will create implicit sequence "categorizations_id_seq" for serial column "categorizations.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "categorizations_pkey" for table "categorizations"
+NOTICE:  CREATE TABLE will create implicit sequence "contents_id_seq" for serial column "contents.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "contents_pkey" for table "contents"
+NOTICE:  CREATE TABLE will create implicit sequence "feedback_id_seq" for serial column "feedback.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "feedback_pkey" for table "feedback"
+NOTICE:  CREATE TABLE will create implicit sequence "notifications_id_seq" for serial column "notifications.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "notifications_pkey" for table "notifications"
+NOTICE:  CREATE TABLE will create implicit sequence "page_caches_id_seq" for serial column "page_caches.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "page_caches_pkey" for table "page_caches"
+NOTICE:  CREATE TABLE will create implicit sequence "pings_id_seq" for serial column "pings.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pings_pkey" for table "pings"
+NOTICE:  CREATE TABLE will create implicit sequence "post_types_id_seq" for serial column "post_types.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "post_types_pkey" for table "post_types"
+NOTICE:  CREATE TABLE will create implicit sequence "profiles_id_seq" for serial column "profiles.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "profiles_pkey" for table "profiles"
+NOTICE:  CREATE TABLE will create implicit sequence "redirections_id_seq" for serial column "redirections.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "redirections_pkey" for table "redirections"
+NOTICE:  CREATE TABLE will create implicit sequence "redirects_id_seq" for serial column "redirects.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "redirects_pkey" for table "redirects"
+NOTICE:  CREATE TABLE will create implicit sequence "resources_id_seq" for serial column "resources.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "resources_pkey" for table "resources"
+NOTICE:  CREATE TABLE will create implicit sequence "rights_id_seq" for serial column "rights.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "rights_pkey" for table "rights"
+NOTICE:  CREATE TABLE will create implicit sequence "sidebars_id_seq" for serial column "sidebars.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "sidebars_pkey" for table "sidebars"
+NOTICE:  CREATE TABLE will create implicit sequence "sitealizer_id_seq" for serial column "sitealizer.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "sitealizer_pkey" for table "sitealizer"
+NOTICE:  CREATE TABLE will create implicit sequence "tags_id_seq" for serial column "tags.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tags_pkey" for table "tags"
+NOTICE:  CREATE TABLE will create implicit sequence "text_filters_id_seq" for serial column "text_filters.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "text_filters_pkey" for table "text_filters"
+NOTICE:  CREATE TABLE will create implicit sequence "triggers_id_seq" for serial column "triggers.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "triggers_pkey" for table "triggers"
+NOTICE:  CREATE TABLE will create implicit sequence "users_id_seq" for serial column "users.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "users_pkey" for table "users"
+/home/ec2-user/.rvm/rubies/ruby-1.9.3-p551/bin/ruby -S rspec spec/controllers/admin/categories_controller_spec.rb:67:68:69:70
+/home/ec2-user/.rvm/gems/ruby-1.9.3-p551/gems/activesupport-3.0.17/lib/active_support/dependencies.rb:242:in `block in require': iconv will be deprecated in the future, use String#encode instead.
+Run options: include {:locations=>{"./spec/controllers/admin/categories_controller_spec.rb"=>[67, 68, 69, 70]}}
+.
+
+Finished in 0.24109 seconds
+1 example, 0 failures
+Coverage report generated for RSpec to /home/ec2-user/environment/typo/coverage. 11076 / 14834 LOC (74.67%) covered.
+
+
+
+Rspec logs for spec/controllers/admin/categories_controller_spec.rb from line 72 to 75
+
+ec2-user:~/environment/typo (master) $ rake spec SPEC=spec/controllers/admin/categories_controller_spec.rb:72:73:74:75
+NOTICE:  CREATE TABLE will create implicit sequence "blogs_id_seq" for serial column "blogs.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "blogs_pkey" for table "blogs"
+NOTICE:  CREATE TABLE will create implicit sequence "categories_id_seq" for serial column "categories.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "categories_pkey" for table "categories"
+NOTICE:  CREATE TABLE will create implicit sequence "categorizations_id_seq" for serial column "categorizations.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "categorizations_pkey" for table "categorizations"
+NOTICE:  CREATE TABLE will create implicit sequence "contents_id_seq" for serial column "contents.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "contents_pkey" for table "contents"
+NOTICE:  CREATE TABLE will create implicit sequence "feedback_id_seq" for serial column "feedback.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "feedback_pkey" for table "feedback"
+NOTICE:  CREATE TABLE will create implicit sequence "notifications_id_seq" for serial column "notifications.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "notifications_pkey" for table "notifications"
+NOTICE:  CREATE TABLE will create implicit sequence "page_caches_id_seq" for serial column "page_caches.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "page_caches_pkey" for table "page_caches"
+NOTICE:  CREATE TABLE will create implicit sequence "pings_id_seq" for serial column "pings.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pings_pkey" for table "pings"
+NOTICE:  CREATE TABLE will create implicit sequence "post_types_id_seq" for serial column "post_types.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "post_types_pkey" for table "post_types"
+NOTICE:  CREATE TABLE will create implicit sequence "profiles_id_seq" for serial column "profiles.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "profiles_pkey" for table "profiles"
+NOTICE:  CREATE TABLE will create implicit sequence "redirections_id_seq" for serial column "redirections.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "redirections_pkey" for table "redirections"
+NOTICE:  CREATE TABLE will create implicit sequence "redirects_id_seq" for serial column "redirects.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "redirects_pkey" for table "redirects"
+NOTICE:  CREATE TABLE will create implicit sequence "resources_id_seq" for serial column "resources.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "resources_pkey" for table "resources"
+NOTICE:  CREATE TABLE will create implicit sequence "rights_id_seq" for serial column "rights.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "rights_pkey" for table "rights"
+NOTICE:  CREATE TABLE will create implicit sequence "sidebars_id_seq" for serial column "sidebars.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "sidebars_pkey" for table "sidebars"
+NOTICE:  CREATE TABLE will create implicit sequence "sitealizer_id_seq" for serial column "sitealizer.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "sitealizer_pkey" for table "sitealizer"
+NOTICE:  CREATE TABLE will create implicit sequence "tags_id_seq" for serial column "tags.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tags_pkey" for table "tags"
+NOTICE:  CREATE TABLE will create implicit sequence "text_filters_id_seq" for serial column "text_filters.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "text_filters_pkey" for table "text_filters"
+NOTICE:  CREATE TABLE will create implicit sequence "triggers_id_seq" for serial column "triggers.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "triggers_pkey" for table "triggers"
+NOTICE:  CREATE TABLE will create implicit sequence "users_id_seq" for serial column "users.id"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "users_pkey" for table "users"
+/home/ec2-user/.rvm/rubies/ruby-1.9.3-p551/bin/ruby -S rspec spec/controllers/admin/categories_controller_spec.rb:72:73:74:75
+/home/ec2-user/.rvm/gems/ruby-1.9.3-p551/gems/activesupport-3.0.17/lib/active_support/dependencies.rb:242:in `block in require': iconv will be deprecated in the future, use String#encode instead.
+Run options: include {:locations=>{"./spec/controllers/admin/categories_controller_spec.rb"=>[72, 73, 74, 75]}}
+.
+
+Finished in 0.13258 seconds
+1 example, 0 failures
+Coverage report generated for RSpec to /home/ec2-user/environment/typo/coverage. 10970 / 14834 LOC (73.95%) covered.
+
+
+
+apps/controllers/admin/categories_controller.rb file
+
+
+class Admin::CategoriesController < Admin::BaseController
+  cache_sweeper :blog_sweeper
+
+  def index; redirect_to :action => 'new' ; end
+  def edit; new_or_edit;  end
+
+  def new 
+    respond_to do |format|
+      format.html { new_or_edit }
+      format.js { 
+        @category = Category.new
+      }
+    end
+  end
+
+  def destroy
+    @record = Category.find(params[:id])
+    return(render 'admin/shared/destroy') unless request.post?
+
+    @record.destroy
+    redirect_to :action => 'new'
+  end
+
+  private
+
+  def new_or_edit
+    @categories = Category.find(:all)
+
+    if params[:id] == nil
+      @category = Category.new
+    else
+      @category = Category.find(params[:id])
+    end
+    @category.attributes = params[:category]
+    if request.post?
+      respond_to do |format|
+        format.html { save_category }
+        format.js do 
+          @category.save
+          @article = Article.new
+          @article.categories << @category
+          return render(:partial => 'admin/content/categories')
+        end
+      end
+      return
+    end
+    render 'new'
+  end
+
+  def save_category
+    if @category.save!
+      flash[:notice] = _('Category was successfully saved.')
+    else
+      flash[:error] = _('Category could not be saved.')
+    end
+    redirect_to :action => 'new'
+  end
+
+end
+
+
+
+apps/views/admin/categories/new.html.erb file
+
+
+<% @page_heading = _("Categories") %>
+
+<div class='left_form'>
+  <!-- NOTE: 
+       Do not modify :action=>"edit" since the autograder depends on it 
+   -->
+  <%= form_tag :action=>"edit" do %>
+  <%= error_messages_for 'category' %>
+  <div class='clearfix'>
+    <label for="category_name"><%= _("Name")%></label>
+    <div class='input'>
+      <%= text_field :category, :name, :class => 'large'  %>
+    </div>
+  </div>
+  <div class='clearfix'>
+    <label for="category_keywords"><%= _("Keywords") %></label>
+    <div class='input'>
+      <%= text_field :category, :keywords, :class => 'large' %>
+    </div>
+  </div>
+  <div class='clearfix'>
+    <label for="category_permalink"><%= _("Permalink") %></label>
+    <div class='input'>
+      <%= text_field :category, :permalink, :class => 'large' %>
+	  <span class='help-block'><%= _("Your category slug. Leave empty if you don't know what to put here") %></span>
+    </div>
+  </div>
+  <div class='clearfix'>
+    <label for="category_description"><%= _("Description") %></label>
+    <div class='input'>
+      <%= text_area :category, :description, :rows => 5, :class => 'large' %>
+    </div>
+  </div>
+  <div class='actions'>
+    <%= cancel_or_save %>  
+  </div>
+  <% end %>
+</div>
+
+<div class="right_table">
+  <table id='category_container' class="zebra-striped">
+    <thead>
+      <tr class='noborder'>
+        <th><%= _("Title") %></th>
+        <th><%= _("Description") %></th>
+        <th><%= _("Permalink") %></th>
+        <th><%= _("Keywords") %></th>
+      </tr>
+    </thead>
+    <%= render_void_table(@categories.size, 4)  %>
+    <% for category in @categories -%>
+    <tr <%= alternate_class -%> id="category_<%= category.id -%>">
+      <td>
+        <%= link_to_edit category.name, category %><br />
+        <%= show_category_actions category %>
+      </td>
+      <td><%= h category.description %></td>
+      <td><%= category.permalink %></td>
+      <td><%= h category.keywords %></td>
+    </tr>
+    <% end -%>
+  </table>
+</div>
