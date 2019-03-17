@@ -4,7 +4,9 @@ JaeHun Jung
 heroku URL: https://mysterious-earth-42875.herokuapp.com/admin
 github repo URL: https://github.com/JaeHun0304/typo.git
 
-
+typo credentials
+Username: admin
+Password: 3ZX7Ea7
 
 features/create_edit_category.feature file
 
